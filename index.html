@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selector de Test Estadístico</title>
+    <style>
+        :root {
+            --primary-color: #3a4a7b;
+            --secondary-color: #e0f2f1;
+            --accent-color: #9e77b5;
+            --light-blue: #c5e3f6;
+            --light-purple: #f0e6f5;
+            --text-color: #333;
+            --border-radius: 12px;
+            --box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f8f9fa;
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            font-size: 2.2rem;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        p {
+            margin-bottom: 20px;
+        }
+
+        .question-container {
+            background-color: white;
+            border-radius: var(--border-radius);
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: var(--box-shadow);
+            transition: all 0.3s ease;
+        }
+
+        .question {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .option-btn {
+            flex: 1 0 calc(50% - 15px);
+            min-width: 150px;
+            padding: 12px 20px;
+            border: 2px solid var(--primary-color);
+            border-radius: var(--border-radius);
+            background-color: white;
+            color: var(--primary-color);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .option-btn:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .option-btn:active {
+            transform: scale(0.98);
+        }
+
+        .result-container {
+            background-color: var(--light-purple);
+            border-radius: var(--border-radius);
+            padding: 25px;
+            margin-top: 20px;
+            box-shadow: var(--box-shadow);
+            border-left: 5px solid var(--accent-color);
+        }
+
+        .result-title {
+            color: var(--primary-color);
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .result-description {
+            margin-bottom: 15px;
+        }
+
+        .restart-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin-top: 20px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .restart-btn:hover {
+            background-color: #2c3a66;
+        }
+
+        .path-tracker {
+            background-color: var(--secondary-color);
+            padding: 15px;
+            border-radius: var(--border-radius);
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+
+        .path-step {
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+        }
+
+        .path-step:before {
+            content: "→";
+            margin-right: 8px;
+            color: var(--primary-color);
+        }
+
+        .path-step:first-child:before {
+            content: "";
+            margin-right: 0;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 600px) {
+            .options {
+                flex-direction: column;
+            }
+            
+            .option-btn {
+                width: 100%;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .question {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Selector de Test Estadístico</h1>
+        <p>Esta aplicación te guiará paso a paso para seleccionar el test estadístico paramétrico más adecuado para tu análisis.</p>
+    </header>
+
+    <div class="path-tracker" id="pathTracker">
+        <div class="path-step">Inicio</div>
+    </div>
+
+    <div id="questionContainer" class="question-container">
+        <div class="question" id="questionText">¿Qué tipo de variable predictora tienes?</div>
+        <div class="options" id="optionsContainer">
+            <button class="option-btn" onclick="selectOption('categorical', 'predictorType')">Categórica</button>
+            <button class="option-btn" onclick="selectOption('quantitative', 'predictorType')">Cuantitativa</button>
+        </div>
+    </div>
+
+    <div id="resultContainer" class="result-container hidden">
+        <h2 class="result-title" id="resultTitle"></h2>
+        <p class="result-description" id="resultDescription"></p>
+        <button class="restart-btn" onclick="restartQuiz()">Comenzar de nuevo</button>
+    </div>
+
+    <script>
+        // Definir la estructura del árbol de decisión
+        const decisionTree = {
+            predictorType: {
+                question: "¿Qué tipo de variable predictora tienes?",
+                options: {
+                    categorical: {
+                        next: "outcomeTypeCategoricalPredictor",
+                        pathText: "Variable predictora: Categórica"
+                    },
+                    quantitative: {
+                        next: "outcomeTypeQuantitativePredictor",
+                        pathText: "Variable predictora: Cuantitativa"
+                    }
+                }
+            },
+            outcomeTypeCategoricalPredictor: {
+                question: "¿Qué tipo de variable de resultado tienes?",
+                options: {
+                    categorical: {
+                        result: "nonParametricTest",
+                        pathText: "Variable de resultado: Categórica"
+                    },
+                    quantitative: {
+                        next: "comparisonOfMeans",
+                        pathText: "Variable de resultado: Cuantitativa"
+                    }
+                }
+            },
+            outcomeTypeQuantitativePredictor: {
+                question: "¿Qué tipo de variable de resultado tienes?",
+                options: {
+                    categorical: {
+                        result: "logisticRegression",
+                        pathText: "Variable de resultado: Categórica"
+                    },
+                    quantitative: {
+                        next: "howManyPredictorVariables",
+                        pathText: "Variable de resultado: Cuantitativa"
+                    }
+                }
+            },
+            comparisonOfMeans: {
+                question: "¿Cuántos grupos estás comparando?",
+                options: {
+                    two: {
+                        result: "tTest",
+                        pathText: "Comparación de medias: Dos grupos"
+                    },
+                    moreThanTwo: {
+                        next: "howManyOutcomeVariables",
+                        pathText: "Comparación de medias: Más de dos grupos"
+                    }
+                }
+            },
+            howManyPredictorVariables: {
+                question: "¿Cuántas variables predictoras tienes?",
+                options: {
+                    one: {
+                        result: "simpleRegression",
+                        pathText: "Una variable predictora"
+                    },
+                    moreThanOne: {
+                        result: "multipleRegression",
+                        pathText: "Más de una variable predictora"
+                    }
+                }
+            },
+            howManyOutcomeVariables: {
+                question: "¿Cuántas variables de resultado tienes?",
+                options: {
+                    one: {
+                        result: "anova",
+                        pathText: "Una variable de resultado"
+                    },
+                    moreThanOne: {
+                        result: "manova",
+                        pathText: "Más de una variable de resultado"
+                    }
+                }
+            }
+        };
+
+        // Definir la información de resultados
+        const results = {
+            nonParametricTest: {
+                title: "Test No Paramétrico",
+                description: "Para variables predictoras categóricas y variables de resultado categóricas, se recomienda usar un test no paramétrico como Chi-cuadrado o el test exacto de Fisher. Estos tests evalúan la asociación entre variables categóricas."
+            },
+            tTest: {
+                title: "T-test",
+                description: "Para comparar las medias de dos grupos, se recomienda usar un t-test. Puedes usar un t-test independiente si los grupos son distintos, o un t-test pareado si son medidas repetidas del mismo grupo."
+            },
+            anova: {
+                title: "ANOVA (Análisis de Varianza)",
+                description: "Para comparar las medias de más de dos grupos con una variable de resultado, se recomienda usar ANOVA. Este test te permite determinar si hay diferencias significativas entre las medias de los grupos."
+            },
+            manova: {
+                title: "MANOVA (Análisis Multivariante de Varianza)",
+                description: "Para comparar las medias de más de dos grupos con múltiples variables de resultado, se recomienda MANOVA. Este análisis te permite examinar los efectos de variables independientes categóricas sobre múltiples variables dependientes."
+            },
+            logisticRegression: {
+                title: "Regresión Logística",
+                description: "Para predecir una variable de resultado categórica a partir de una variable predictora cuantitativa, se recomienda la regresión logística. Este modelo estadístico permite estimar la probabilidad de un evento basado en variables predictoras."
+            },
+            simpleRegression: {
+                title: "Regresión Simple",
+                description: "Para predecir una variable de resultado cuantitativa a partir de una variable predictora cuantitativa, se recomienda la regresión simple. Este análisis modela la relación entre dos variables mediante una línea recta."
+            },
+            multipleRegression: {
+                title: "Regresión Múltiple",
+                description: "Para predecir una variable de resultado cuantitativa a partir de múltiples variables predictoras cuantitativas, se recomienda la regresión múltiple. Este modelo estadístico permite analizar la relación entre una variable dependiente y varias variables independientes."
+            }
+        };
+
+        let currentState = "predictorType";
+        const pathTracker = document.getElementById("pathTracker");
+        
+        function selectOption(option, state) {
+            const stateData = decisionTree[state];
+            const optionData = stateData.options[option];
+            
+            // Actualizar el rastreador de ruta
+            const pathStep = document.createElement("div");
+            pathStep.className = "path-step";
+            pathStep.textContent = optionData.pathText;
+            pathTracker.appendChild(pathStep);
+            
+            if (optionData.result) {
+                // Mostrar el resultado
+                showResult(optionData.result);
+            } else if (optionData.next) {
+                // Pasar a la siguiente pregunta
+                currentState = optionData.next;
+                updateQuestion();
+            }
+        }
+        
+        function updateQuestion() {
+            const stateData = decisionTree[currentState];
+            const questionText = document.getElementById("questionText");
+            const optionsContainer = document.getElementById("optionsContainer");
+            
+            questionText.textContent = stateData.question;
+            optionsContainer.innerHTML = "";
+            
+            // Crear botones de opciones
+            for (const [option, data] of Object.entries(stateData.options)) {
+                const button = document.createElement("button");
+                button.className = "option-btn";
+                button.textContent = formatOptionText(option);
+                button.onclick = () => selectOption(option, currentState);
+                optionsContainer.appendChild(button);
+            }
+        }
+        
+        function formatOptionText(option) {
+            switch(option) {
+                case "categorical": return "Categórica";
+                case "quantitative": return "Cuantitativa";
+                case "two": return "Dos";
+                case "moreThanTwo": return "Más de dos";
+                case "one": return "Una";
+                case "moreThanOne": return "Más de una";
+                default: return option;
+            }
+        }
+        
+        function showResult(resultKey) {
+            const result = results[resultKey];
+            const questionContainer = document.getElementById("questionContainer");
+            const resultContainer = document.getElementById("resultContainer");
+            const resultTitle = document.getElementById("resultTitle");
+            const resultDescription = document.getElementById("resultDescription");
+            
+            questionContainer.classList.add("hidden");
+            resultContainer.classList.remove("hidden");
+            
+            resultTitle.textContent = result.title;
+            resultDescription.textContent = result.description;
+        }
+        
+        function restartQuiz() {
+            currentState = "predictorType";
+            
+            const questionContainer = document.getElementById("questionContainer");
+            const resultContainer = document.getElementById("resultContainer");
+            
+            questionContainer.classList.remove("hidden");
+            resultContainer.classList.add("hidden");
+            
+            // Reiniciar el rastreador de ruta
+            pathTracker.innerHTML = '<div class="path-step">Inicio</div>';
+            
+            updateQuestion();
+        }
+    </script>
+</body>
+</html>
